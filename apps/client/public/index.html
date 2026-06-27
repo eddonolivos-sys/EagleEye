@@ -13,8 +13,9 @@
   main { display:flex; flex-wrap:wrap; gap:1.25rem; padding:1.25rem; align-items:flex-start; }
   .stage { position:relative; width:640px; max-width:100%; aspect-ratio:4/3; background:#000; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
   .stage video, .stage canvas { position:absolute; inset:0; width:100%; height:100%; }
-  /* Video espejado (selfie). El canvas NO se espeja: el render ya espeja las coordenadas. */
-  .stage video { transform: scaleX(-1); object-fit:cover; }
+  /* El espejado (selfie) lo controla main.js segun la cámara (frontal sí, trasera no).
+     El canvas NO se espeja: el render ya espeja las coordenadas. */
+  .stage video { object-fit:cover; }
   .panel { flex:1; min-width:260px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.1rem; }
   .controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
   button { background:var(--accent); color:#04210a; border:0; border-radius:7px; padding:.55rem .9rem; font-weight:700; cursor:pointer; }
@@ -39,7 +40,11 @@
   <div class="panel">
     <div class="controls">
       <button id="start">Iniciar cámara</button>
-      <select id="device" title="dispositivo de cámara"></select>
+      <select id="facing" title="cámara frontal o trasera">
+        <option value="user">Frontal</option>
+        <option value="environment">Trasera</option>
+      </select>
+      <select id="device" title="dispositivo de cámara (opcional)"></select>
     </div>
     <dl>
       <dt>FPS</dt><dd class="big" id="fps">0</dd>

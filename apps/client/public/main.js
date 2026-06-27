@@ -16,6 +16,8 @@ import { faceResultToDetectionPayload } from './lib/mapping.js';
 const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
 const video = /** @type {HTMLVideoElement} */ ($('video'));
 const canvas = /** @type {HTMLCanvasElement} */ ($('overlay'));
+const facingSel = /** @type {HTMLSelectElement} */ ($('facing'));
+const deviceSel = /** @type {HTMLSelectElement} */ ($('device'));
 
 const hud = createHud({
   fps: $('fps'), frameMs: $('frameMs'), latency: $('latency'), backend: $('backend'),
@@ -29,6 +31,8 @@ const renderer = createRenderer(canvas);
 
 /** @type {Worker | null} */ let worker = null;
 let busy = false;
+let started = false;
+let looping = false;
 let frameId = 0;
 let lastResultAt = 0;
 let backend = '—';
@@ -44,8 +48,6 @@ bus.subscribe(({ result, inferMs }) => {
   if (lastResultAt) stats.record(now - lastResultAt, inferMs);
   lastResultAt = now;
 
-  // Construye el payload del CONTRATO y lo coalesce a 15 Hz. El backend aún no
-  // existe (build step 4+): aquí solo contamos lo que "se enviaría".
   const payload = faceResultToDetectionPayload(result, {
     sourceWidth: source.width, sourceHeight: source.height, mirrored: source.mirrored,
     detector: 'mediapipe.face_landmarker', modelVersion: '0.10.35',
@@ -79,16 +81,18 @@ function startWorker() {
   worker.postMessage({ type: 'init' });
 }
 
-// Captura por frame de video; single-in-flight (drop-while-busy = backpressure).
+// Captura por frame; single-in-flight (drop-while-busy = backpressure).
 const supportsRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
 function loop() {
+  if (looping) return; // un solo bucle aunque reiniciemos la cámara
+  looping = true;
   const tick = async () => {
     if (!busy && worker && video.readyState >= 2) {
       busy = true;
       try {
         const bitmap = await createImageBitmap(video);
         worker.postMessage({ type: 'frame', bitmap, ts: performance.now(), frameId: ++frameId }, [bitmap]);
-      } catch (err) {
+      } catch {
         busy = false;
       }
     }
@@ -99,30 +103,43 @@ function loop() {
   else requestAnimationFrame(tick);
 }
 
-async function populateDevices() {
-  const sel = /** @type {HTMLSelectElement} */ ($('device'));
+async function rebuildDeviceOptions() {
   try {
     const devices = await camera.listDevices();
-    const current = sel.value;
-    sel.innerHTML = '';
+    const cur = deviceSel.value;
+    deviceSel.innerHTML = '';
+    const auto = document.createElement('option');
+    auto.value = '';
+    auto.textContent = 'Cámara automática';
+    deviceSel.appendChild(auto);
     devices.forEach((d, i) => {
       const o = document.createElement('option');
       o.value = d.deviceId;
       o.textContent = d.label || 'cámara ' + (i + 1);
-      sel.appendChild(o);
+      deviceSel.appendChild(o);
     });
-    if (current) sel.value = current;
-  } catch { /* labels vacíos hasta conceder permiso */ }
+    deviceSel.value = [...deviceSel.options].some((o) => o.value === cur) ? cur : '';
+  } catch {
+    /* etiquetas vacías hasta conceder permiso */
+  }
 }
 
-$('start').addEventListener('click', async () => {
+async function startCamera() {
   try {
+    const facing = /** @type {'user'|'environment'} */ (facingSel.value);
     hud.status('pidiendo permiso de cámara…');
-    const sel = /** @type {HTMLSelectElement} */ ($('device'));
-    const info = await camera.start({ deviceId: sel.value || undefined, width: 640, height: 480 });
-    source = { width: info.width, height: info.height, mirrored: true };
+    const info = await camera.start({
+      deviceId: deviceSel.value || undefined,
+      facingMode: facing,
+      width: 640,
+      height: 480,
+    });
+    started = true;
+    const mirrored = facing === 'user'; // selfie solo con cámara frontal
+    source = { width: info.width, height: info.height, mirrored };
+    video.style.transform = mirrored ? 'scaleX(-1)' : 'none';
     renderer.resize(info.width, info.height);
-    await populateDevices(); // ahora con etiquetas reales
+    await rebuildDeviceOptions(); // ahora con etiquetas reales
     hud.status('cámara ' + info.width + '×' + info.height + ' — cargando modelo…');
     if (!worker) startWorker();
     else loop();
@@ -130,9 +147,14 @@ $('start').addEventListener('click', async () => {
     hud.status('error de cámara: ' + (err && err.message ? err.message : err));
     console.error(err);
   }
-});
+}
+
+$('start').addEventListener('click', startCamera);
+// Cambiar de cámara reinicia el stream (solo si ya estaba activa).
+facingSel.addEventListener('change', () => { if (started) startCamera(); });
+deviceSel.addEventListener('change', () => { if (started) startCamera(); });
 
 // Estado inicial
 hud.status('listo — pulsa «Iniciar cámara»');
 hud.update({ fps: 0, frameMs: 0, latencyMs: 0, backend: '—', faces: 0, sent: 0, coi });
-populateDevices();
+rebuildDeviceOptions();

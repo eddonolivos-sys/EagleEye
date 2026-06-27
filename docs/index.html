@@ -52,8 +52,8 @@
         <td><a href="estado/client-engine.md"><code>client-engine</code></a></td>
         <td>cliente</td>
         <td><span class="badge estado-en-progreso">en-progreso</span></td>
-        <td>createCamera, createResultBus, createStats, createThrottle, createRenderer, createHud, faceResultToDetectionPayload, inference.worker</td>
-        <td class="muted">apps/client/test/ (13 tests; mapping validado contra el contrato), node --check, curl del dev server (headers COOP/COEP + assets)</td>
+        <td>createCamera, buildVideoConstraints, assertGetUserMedia, createResultBus, createStats, createThrottle, createRenderer, createHud, faceResultToDetectionPayload, inference.worker</td>
+        <td class="muted">apps/client/test/ (19 tests; mapping validado contra el contrato), node --check, curl del dev server (http y https con SAN de LAN, headers COOP/COEP)</td>
       </tr>
       <tr>
         <td><a href="estado/docs-pipeline.md"><code>docs-pipeline</code></a></td>
@@ -74,6 +74,7 @@
 <li><a href="decisiones/0006-docs-markdown-fuente-unica-html-generado.md">ADR-0006 — Documentación: Markdown fuente única → HTML generado</a> <span class="muted">— Aceptado</span></li>
 <li><a href="decisiones/0007-calibracion-cimientos-correctos-escala-incremental.md">ADR-0007 — Calibración: cimientos correctos + endurecido por componente, escala incremental</a> <span class="muted">— Aceptado</span></li>
 <li><a href="decisiones/0008-pnpm-seguridad.md">ADR-0008 — Migración a pnpm por seguridad de cadena de suministro</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0009-dev-https-movil-contexto-seguro.md">ADR-0009 — HTTPS en dev (certificado autofirmado) para probar en móvil</a> <span class="muted">— Aceptado</span></li>
   </ul>
 
   <h2>Documentación</h2>

@@ -50,7 +50,22 @@ pnpm run docs:build            # genera docs/index.html desde el Markdown
 
 > **Seguridad de cadena de suministro (pnpm):** `node_modules` estricto (sin dependencias fantasma), scripts de postinstalación bloqueados (`onlyBuiltDependencies: []`), cooldown de versiones (`minimumReleaseAge`) y verificación de integridad del store. En CI: `pnpm install --frozen-lockfile`.
 
-> El **cliente** (build step 2) requerirá **contexto seguro (HTTPS o localhost)** para `getUserMedia`. En producción lo resuelve Caddy (auto-TLS).
+### Probar el slice del cliente
+
+```bash
+pnpm --filter @eagleeye/client run vendor     # una vez: descarga MediaPipe (~36MB, SHA verificado)
+pnpm --filter @eagleeye/client run dev        # escritorio -> http://localhost:5173
+```
+
+Abre `http://localhost:5173`, pulsa «Iniciar cámara» y elige **Frontal/Trasera**.
+
+**Desde el móvil** (otro dispositivo de la LAN) la cámara exige **contexto seguro**: `http://IP` NO sirve (`navigator.mediaDevices` queda `undefined`). Usa HTTPS:
+
+```bash
+pnpm --filter @eagleeye/client run dev:https  # imprime https://<IP-de-LAN>:5173
+```
+
+Abre esa URL `https://…` en el móvil, acepta una vez el aviso de certificado autofirmado y concede permiso de cámara. En producción el contexto seguro lo da Caddy con auto-TLS. Ver [ADR-0009](docs/decisiones/0009-dev-https-movil-contexto-seguro.md).
 
 ## Documentación
 

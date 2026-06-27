@@ -1,19 +1,23 @@
-// Servidor estatico minimo (sin dependencias) para el slice del cliente.
+// Servidor estatico minimo (sin dependencias de runtime) para el slice del cliente.
 //
-// - Sirve public/ sobre http://localhost:PORT  (localhost = contexto seguro,
-//   asi getUserMedia funciona sin TLS en dev).
-// - Cabeceras COOP/COEP -> crossOriginIsolated=true -> habilita SharedArrayBuffer
-//   (WASM con hilos de MediaPipe). Ver glosario y ADR de seguridad.
+//   pnpm --filter @eagleeye/client run dev         -> http  (escritorio via localhost)
+//   pnpm --filter @eagleeye/client run dev:https    -> https (movil via IP de LAN)
+//
+// getUserMedia exige CONTEXTO SEGURO: localhost cuenta como seguro, pero http://IP
+// NO. Por eso el movil necesita HTTPS. Cabeceras COOP/COEP -> crossOriginIsolated
+// -> habilita SharedArrayBuffer (WASM con hilos de MediaPipe).
 
-import { createServer } from 'node:http';
+import { createServer as createHttp } from 'node:http';
+import { createServer as createHttps } from 'node:https';
 import { readFile, stat } from 'node:fs/promises';
-import { join, extname, normalize, sep } from 'node:path';
+import { join, extname, normalize, sep, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { ensureDevCert, lanIPv4s } from './cert.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', 'public');
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5173;
+const useHttps = process.argv.includes('--https') || process.env.HTTPS === '1';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -29,20 +33,18 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
-const server = createServer(async (req, res) => {
+/** @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res */
+async function handler(req, res) {
   try {
     let rel = decodeURIComponent((req.url || '/').split('?')[0]);
     rel = normalize(rel);
     if (rel === '/' || rel === sep) rel = '/index.html';
     let filePath = join(root, rel);
-
-    // Guarda contra path traversal.
     if (!filePath.startsWith(root)) {
       res.writeHead(403);
       res.end('forbidden');
       return;
     }
-
     let s;
     try {
       s = await stat(filePath);
@@ -52,7 +54,6 @@ const server = createServer(async (req, res) => {
       return;
     }
     if (s.isDirectory()) filePath = join(filePath, 'index.html');
-
     const body = await readFile(filePath);
     res.writeHead(200, {
       'Content-Type': MIME[extname(filePath).toLowerCase()] || 'application/octet-stream',
@@ -66,9 +67,27 @@ const server = createServer(async (req, res) => {
     res.writeHead(500);
     res.end('error: ' + (e instanceof Error ? e.message : String(e)));
   }
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`EagleEye client dev -> http://localhost:${PORT}`);
-  console.log('Abre esa URL (localhost es contexto seguro; la camara funciona sin TLS). Ctrl+C para salir.');
-});
+const ips = lanIPv4s();
+
+/** @param {'http'|'https'} scheme */
+function printUrls(scheme) {
+  console.log(`EagleEye client dev (${scheme}) — puerto ${PORT}:`);
+  console.log(`  ${scheme}://localhost:${PORT}     (escritorio, en esta máquina)`);
+  for (const ip of ips) console.log(`  ${scheme}://${ip}:${PORT}   <- abre ESTA en el móvil`);
+  if (scheme === 'https') {
+    console.log('Certificado autofirmado: el navegador móvil avisará una vez; pulsa "Avanzado → continuar".');
+  } else {
+    console.log('AVISO: por http://IP la cámara NO funciona en móvil (contexto no seguro).');
+    console.log('       Usa: pnpm --filter @eagleeye/client run dev:https');
+  }
+  console.log('Ctrl+C para salir.');
+}
+
+if (useHttps) {
+  const { key, cert } = await ensureDevCert(join(here, '..', '.certs'), ips);
+  createHttps({ key, cert }, handler).listen(PORT, () => printUrls('https'));
+} else {
+  createHttp(handler).listen(PORT, () => printUrls('http'));
+}

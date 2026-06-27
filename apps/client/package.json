@@ -7,12 +7,14 @@
   "scripts": {
     "test": "node --test",
     "vendor": "node scripts/vendor.js",
-    "dev": "node scripts/serve.js"
+    "dev": "node scripts/serve.js",
+    "dev:https": "node scripts/serve.js --https"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.35"
   },
   "devDependencies": {
-    "@eagleeye/protocol": "workspace:*"
+    "@eagleeye/protocol": "workspace:*",
+    "selfsigned": "5.5.0"
   }
 }

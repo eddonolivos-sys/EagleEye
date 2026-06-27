@@ -13,3 +13,6 @@ Thumbs.db
 
 # Assets MediaPipe auto-alojados (regenerar con: pnpm --filter @eagleeye/client run vendor)
 apps/client/public/vendor/
+
+# Certificado autofirmado del dev server HTTPS (se regenera solo)
+apps/client/.certs/
