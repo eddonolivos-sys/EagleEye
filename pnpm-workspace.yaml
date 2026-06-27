@@ -1,0 +1,20 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - 'tools/*'
+
+# --- Seguridad de cadena de suministro (ver ADR-0008) ---
+
+# Ningun paquete de dependencias puede ejecutar scripts de ciclo de vida
+# (postinstall, etc.). Allowlist vacia = nada permitido. Si algun dia un paquete
+# legitimo necesita build, se anade explicitamente aqui (no se aprueba a ciegas).
+onlyBuiltDependencies: []
+
+# Cooldown de versiones: rechaza instalar cualquier version publicada hace menos
+# de N minutos. 4320 = 3 dias. Mitiga el vector "publican version maliciosa y la
+# retiran en horas" de los ataques a npm. Ajustable; usa minimumReleaseAgeExclude
+# para exenciones puntuales si un parche urgente lo requiere.
+minimumReleaseAge: 4320
+
+# Verifica el hash del contenido del store en cada instalacion.
+verifyStoreIntegrity: true

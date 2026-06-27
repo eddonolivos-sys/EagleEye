@@ -2,7 +2,7 @@
 modulo: docs-pipeline
 capa: docs
 estado: en-progreso
-interfaz: parseFrontmatter, npm run docs:build
+interfaz: parseFrontmatter, pnpm run docs:build
 dependencias: (ninguna; solo Node stdlib)
 archivos_clave: tools/docs-gen/src/frontmatter.js, tools/docs-gen/build.js
 verificado_por: tools/docs-gen/test/frontmatter.test.js

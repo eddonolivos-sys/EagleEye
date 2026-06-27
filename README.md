@@ -38,14 +38,17 @@ El roadmap por fases vive aquí (intención humana). El **estado real** de cada 
 
 ## Cómo correr (dev)
 
-Requisitos: **Node ≥ 20** (probado en 24), npm.
+Requisitos: **Node ≥ 20** (probado en 24) y **pnpm** (gestionado por Corepack — ver [ADR-0008](docs/decisiones/0008-pnpm-seguridad.md)).
 
 ```bash
-npm install --ignore-scripts   # --ignore-scripts = higiene de cadena de suministro
-npm test                       # tests del contrato (node:test)
-npm run typecheck              # tsc --checkJs (contrato verificado por máquina)
-npm run docs:build             # genera docs/index.html desde el Markdown
+corepack enable                # usa la versión de pnpm fijada en package.json (packageManager)
+pnpm install                   # instala; scripts de dependencias bloqueados por defecto
+pnpm test                      # tests del contrato (node:test)
+pnpm run typecheck             # tsc --checkJs (contrato verificado por máquina)
+pnpm run docs:build            # genera docs/index.html desde el Markdown
 ```
+
+> **Seguridad de cadena de suministro (pnpm):** `node_modules` estricto (sin dependencias fantasma), scripts de postinstalación bloqueados (`onlyBuiltDependencies: []`), cooldown de versiones (`minimumReleaseAge`) y verificación de integridad del store. En CI: `pnpm install --frozen-lockfile`.
 
 > El **cliente** (build step 2) requerirá **contexto seguro (HTTPS o localhost)** para `getUserMedia`. En producción lo resuelve Caddy (auto-TLS).
 
