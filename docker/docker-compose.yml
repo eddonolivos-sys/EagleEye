@@ -1,0 +1,20 @@
+# Despliegue del cliente EagleEye en UN contenedor (Caddy + estaticos).
+# Uso:  docker compose -f docker/docker-compose.yml up --build
+# Luego: http://<host>  ->  redirige a  https://<host>  (camara disponible).
+#
+# Cuando llegue el backend (build step 4+), este compose gana servicios `app`
+# (Node) y `db` (Postgres) y Caddy pasa a hacer ademas de reverse-proxy. Ver
+# ADR-0010: contenedor unico ahora, pocos servicios en compose despues (NO meter
+# Node+Postgres+Caddy en una sola imagen).
+
+services:
+  client:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: eagleeye-client
+    container_name: eagleeye-client
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped

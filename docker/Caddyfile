@@ -1,0 +1,33 @@
+# Caddy: sirve el cliente estatico de EagleEye con HTTPS y redireccion automatica.
+# - :80  -> redirige TODO a https (la redireccion automatica que pediste).
+# - :443 -> HTTPS con CA interna de Caddy, acunando un certificado ON-DEMAND para
+#   cualquier host/IP que llegue (la IP de LAN es dinamica, por eso on_demand).
+#   En LAN sin dominio el navegador avisa una vez (o instala la CA de Caddy).
+#   Con dominio publico: sustituir `tls internal {on_demand}` por el dominio ->
+#   Let's Encrypt automatico y sin aviso.
+# - Cabeceras COOP/COEP -> crossOriginIsolated -> WASM con hilos de MediaPipe.
+
+{
+	auto_https disable_redirects
+	local_certs
+}
+
+:80 {
+	redir https://{host}{uri} permanent
+}
+
+:443 {
+	tls internal {
+		on_demand
+	}
+	root * /srv
+	file_server
+	encode gzip
+
+	header {
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		Cross-Origin-Resource-Policy "same-origin"
+		-Server
+	}
+}

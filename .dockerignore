@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.git
+.claude
+apps/client/public/vendor
+apps/client/.certs
+dist
+build
+coverage
+*.log
+*.tsbuildinfo
+docs/index.html

@@ -67,6 +67,16 @@ pnpm --filter @eagleeye/client run dev:https  # imprime https://<IP-de-LAN>:5173
 
 Abre esa URL `https://…` en el móvil, acepta una vez el aviso de certificado autofirmado y concede permiso de cámara. En producción el contexto seguro lo da Caddy con auto-TLS. Ver [ADR-0009](docs/decisiones/0009-dev-https-movil-contexto-seguro.md).
 
+### Desplegar (Docker: HTTPS + redirección automática)
+
+Un único contenedor (Caddy + cliente estático) con **redirección automática `http→https`** y contexto seguro para la cámara:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Luego abre `http://<host>` (o la IP de LAN): Caddy redirige **automáticamente** a `https://<host>`. En LAN sin dominio, acepta una vez el aviso de certificado (CA interna de Caddy); con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso. Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
+
 ## Documentación
 
 - **Diseño maestro:** [`docs/superpowers/specs/2026-06-27-eagleeye-plataforma-design.md`](docs/superpowers/specs/2026-06-27-eagleeye-plataforma-design.md)

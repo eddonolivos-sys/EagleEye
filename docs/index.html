@@ -56,6 +56,13 @@
         <td class="muted">apps/client/test/ (19 tests; mapping validado contra el contrato), node --check, curl del dev server (http y https con SAN de LAN, headers COOP/COEP)</td>
       </tr>
       <tr>
+        <td><a href="estado/deploy.md"><code>deploy</code></a></td>
+        <td>despliegue</td>
+        <td><span class="badge estado-en-progreso">en-progreso</span></td>
+        <td>docker compose up (cliente), redir 80-&gt;443, tls internal on_demand</td>
+        <td class="muted">docker build + run (301 http-&gt;https y 200 https con COOP/COEP verificados via wget interno)</td>
+      </tr>
+      <tr>
         <td><a href="estado/docs-pipeline.md"><code>docs-pipeline</code></a></td>
         <td>docs</td>
         <td><span class="badge estado-en-progreso">en-progreso</span></td>
@@ -75,6 +82,7 @@
 <li><a href="decisiones/0007-calibracion-cimientos-correctos-escala-incremental.md">ADR-0007 — Calibración: cimientos correctos + endurecido por componente, escala incremental</a> <span class="muted">— Aceptado</span></li>
 <li><a href="decisiones/0008-pnpm-seguridad.md">ADR-0008 — Migración a pnpm por seguridad de cadena de suministro</a> <span class="muted">— Aceptado</span></li>
 <li><a href="decisiones/0009-dev-https-movil-contexto-seguro.md">ADR-0009 — HTTPS en dev (certificado autofirmado) para probar en móvil</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0010-docker-contenedor-unico-cliente.md">ADR-0010 — Contenedor único (Caddy) para el cliente; Compose cuando llegue el backend</a> <span class="muted">— Aceptado</span></li>
   </ul>
 
   <h2>Documentación</h2>
