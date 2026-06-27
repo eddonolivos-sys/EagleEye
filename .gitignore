@@ -10,3 +10,6 @@ coverage/
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Assets MediaPipe auto-alojados (regenerar con: pnpm --filter @eagleeye/client run vendor)
+apps/client/public/vendor/

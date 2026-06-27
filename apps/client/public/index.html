@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EagleEye — slice del cliente (Face Landmarker)</title>
+<style>
+  :root { color-scheme: dark; --bg:#0b0d10; --panel:#15181d; --border:#262b33; --fg:#e5e7eb; --muted:#9ca3af; --accent:#39ff14; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+  header h1 { margin:0; font-size:1.15rem; } header p { margin:.25rem 0 0; color:var(--muted); font-size:.85rem; }
+  main { display:flex; flex-wrap:wrap; gap:1.25rem; padding:1.25rem; align-items:flex-start; }
+  .stage { position:relative; width:640px; max-width:100%; aspect-ratio:4/3; background:#000; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .stage video, .stage canvas { position:absolute; inset:0; width:100%; height:100%; }
+  /* Video espejado (selfie). El canvas NO se espeja: el render ya espeja las coordenadas. */
+  .stage video { transform: scaleX(-1); object-fit:cover; }
+  .panel { flex:1; min-width:260px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.1rem; }
+  .controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+  button { background:var(--accent); color:#04210a; border:0; border-radius:7px; padding:.55rem .9rem; font-weight:700; cursor:pointer; }
+  select { background:#0b0d10; color:var(--fg); border:1px solid var(--border); border-radius:7px; padding:.5rem; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:.4rem 1rem; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; font-variant-numeric:tabular-nums; font-weight:600; }
+  .big { font-size:1.6rem; }
+  .status { margin-top:1rem; padding:.6rem .7rem; background:#0b0d10; border:1px dashed var(--border); border-radius:7px; color:var(--muted); font-size:.85rem; min-height:1.2em; }
+  .note { color:var(--muted); font-size:.8rem; margin-top:1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EagleEye — slice del cliente</h1>
+  <p>Inferencia 100&nbsp;% local (MediaPipe Face Landmarker). Los píxeles nunca salen de esta pestaña.</p>
+</header>
+<main>
+  <div class="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="overlay"></canvas>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <button id="start">Iniciar cámara</button>
+      <select id="device" title="dispositivo de cámara"></select>
+    </div>
+    <dl>
+      <dt>FPS</dt><dd class="big" id="fps">0</dd>
+      <dt>Tiempo de frame</dt><dd><span id="frameMs">0</span> ms</dd>
+      <dt>Latencia inferencia</dt><dd><span id="latency">0</span> ms</dd>
+      <dt>Backend</dt><dd id="backend">—</dd>
+      <dt>Caras detectadas</dt><dd id="faces">0</dd>
+      <dt>Frames "enviables" (15&nbsp;Hz)</dt><dd id="sent">0</dd>
+      <dt>crossOriginIsolated</dt><dd id="coi">—</dd>
+    </dl>
+    <div class="status" id="status">cargando…</div>
+    <p class="note">El backend aún no existe: «Frames enviables» cuenta lo que se transmitiría tras coalescer a 15&nbsp;Hz, ya con el formato del contrato.</p>
+  </div>
+</main>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
