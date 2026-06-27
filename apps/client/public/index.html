@@ -25,6 +25,7 @@
   .big { font-size:1.6rem; }
   .status { margin-top:1rem; padding:.6rem .7rem; background:#0b0d10; border:1px dashed var(--border); border-radius:7px; color:var(--muted); font-size:.85rem; min-height:1.2em; }
   .note { color:var(--muted); font-size:.8rem; margin-top:1rem; }
+  .subtitle { margin:1.2rem 0 .3rem; font-size:.95rem; color:var(--muted); border-top:1px solid var(--border); padding-top:.8rem; }
 </style>
 </head>
 <body>
@@ -54,6 +55,14 @@
       <dt>Caras detectadas</dt><dd id="faces">0</dd>
       <dt>Frames "enviables" (15&nbsp;Hz)</dt><dd id="sent">0</dd>
       <dt>crossOriginIsolated</dt><dd id="coi">—</dd>
+    </dl>
+    <h3 class="subtitle">Análisis (cara)</h3>
+    <dl>
+      <dt>Pose cabeza Y/P/R</dt><dd><span id="yaw">–</span>° / <span id="pitch">–</span>° / <span id="roll">–</span>°</dd>
+      <dt>Sonrisa</dt><dd id="smile">–</dd>
+      <dt>Boca abierta</dt><dd id="mouthOpen">–</dd>
+      <dt>Cejas</dt><dd id="brow">–</dd>
+      <dt>Parpadeo I/D</dt><dd><span id="blinkL">–</span> / <span id="blinkR">–</span></dd>
     </dl>
     <div class="status" id="status">cargando…</div>
     <p class="note">El backend aún no existe: «Frames enviables» cuenta lo que se transmitiría tras coalescer a 15&nbsp;Hz, ya con el formato del contrato.</p>

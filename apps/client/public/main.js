@@ -12,6 +12,7 @@ import { createThrottle } from './lib/throttle.js';
 import { createRenderer } from './lib/renderer.js';
 import { createHud } from './lib/hud.js';
 import { faceResultToDetectionPayload } from './lib/mapping.js';
+import { analyzeFace } from './lib/analysis.js';
 
 const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
 const video = /** @type {HTMLVideoElement} */ ($('video'));
@@ -22,6 +23,8 @@ const deviceSel = /** @type {HTMLSelectElement} */ ($('device'));
 const hud = createHud({
   fps: $('fps'), frameMs: $('frameMs'), latency: $('latency'), backend: $('backend'),
   faces: $('faces'), sent: $('sent'), coi: $('coi'), status: $('status'),
+  yaw: $('yaw'), pitch: $('pitch'), roll: $('roll'),
+  smile: $('smile'), mouthOpen: $('mouthOpen'), brow: $('brow'), blinkL: $('blinkL'), blinkR: $('blinkR'),
 });
 const camera = createCamera(video);
 const bus = createResultBus();
@@ -53,6 +56,10 @@ bus.subscribe(({ result, inferMs }) => {
     detector: 'mediapipe.face_landmarker', modelVersion: '0.10.35',
   });
   if (emitThrottle.push(payload, now)) sentCount++;
+
+  // Analisis (expresiones + pose de cabeza) sobre la deteccion del contrato.
+  const det = payload.detections[0];
+  if (det) hud.updateAnalysis(analyzeFace(det));
 
   const g = stats.get();
   hud.update({
