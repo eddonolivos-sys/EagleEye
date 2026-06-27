@@ -1,0 +1,10 @@
+{
+  "name": "@eagleeye/docs-gen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Genera docs/index.html (resumen interactivo) desde el Markdown fuente unica.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

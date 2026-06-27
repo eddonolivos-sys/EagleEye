@@ -1,0 +1,19 @@
+{
+  "name": "@eagleeye/protocol",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Contrato del protocolo EagleEye: JSON Schema 2020-12 (fuente unica) + validadores + typedefs JSDoc.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./validate": "./src/validate.js",
+    "./schemas/*": "./schemas/*"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  }
+}

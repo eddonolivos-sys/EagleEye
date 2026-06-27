@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EagleEye — resumen del proyecto</title>
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --muted:#6b7280; --bg:#ffffff; --card:#f6f7f9; --border:#e5e7eb; --accent:#2563eb;
+          --ok:#16a34a; --wip:#d97706; --todo:#9ca3af; }
+  @media (prefers-color-scheme: dark){ :root{ --fg:#e5e7eb; --muted:#9ca3af; --bg:#0b0d10; --card:#15181d; --border:#262b33; --accent:#60a5fa; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--fg); background:var(--bg); }
+  main { max-width:980px; margin:0 auto; padding:2rem 1.25rem 4rem; }
+  h1 { margin:0 0 .25rem; font-size:1.8rem; } h2 { margin-top:2.2rem; border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  p.lead { color:var(--muted); margin-top:0; }
+  pre { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:1rem; overflow:auto; font-size:13px; }
+  table { width:100%; border-collapse:collapse; margin:.5rem 0; font-size:14px; }
+  th,td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  code { background:var(--card); padding:.1rem .35rem; border-radius:4px; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  .muted { color:var(--muted); }
+  .badge { display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:12px; font-weight:600; color:#fff; }
+  .estado-completado { background:var(--ok); } .estado-en-progreso { background:var(--wip); } .estado-pendiente { background:var(--todo); }
+  ul.links { columns:2; } ul.links li { margin:.2rem 0; }
+  footer { margin-top:3rem; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>EagleEye</h1>
+  <p class="lead">Motor de visión por computadora en navegador (inferencia 100&nbsp;% local) + hub de integraciones/relay. Resumen interactivo del proyecto.</p>
+
+  <h2>Flujo del sistema</h2>
+  <pre>cámara ─► Worker[MediaPipe] ─► ResultBus ─► overlay + HUD
+                                       └─► emisor (coalesce ~15Hz) ─► WSS+DPoP ─►
+   HUB: gateway(auth+validación+aislamiento) ─► ingest(consent+persistir+outbox)
+        ─► pub/sub ─► proyectores→dashboards / relay→otros clientes</pre>
+
+  <h2>Estado por módulo</h2>
+  <table>
+    <thead><tr><th>Módulo</th><th>Capa</th><th>Estado</th><th>Interfaz</th><th>Verificado por</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><a href="estado/protocol-contract.md"><code>protocol-contract</code></a></td>
+        <td>contrato</td>
+        <td><span class="badge estado-completado">completado</span></td>
+        <td>validateEnvelope, validateDetectionPayload, SUPPORTED</td>
+        <td class="muted">packages/protocol/test/validate.test.js (13 tests), tsc --checkJs</td>
+      </tr>
+      <tr>
+        <td><a href="estado/docs-pipeline.md"><code>docs-pipeline</code></a></td>
+        <td>docs</td>
+        <td><span class="badge estado-en-progreso">en-progreso</span></td>
+        <td>parseFrontmatter, npm run docs:build</td>
+        <td class="muted">tools/docs-gen/test/frontmatter.test.js</td>
+      </tr>
+      <tr>
+        <td><a href="estado/client-engine.md"><code>client-engine</code></a></td>
+        <td>cliente</td>
+        <td><span class="badge estado-pendiente">pendiente</span></td>
+        <td>(por definir) CameraManager, Detector, ResultBus, Renderer, PerfHUD</td>
+        <td class="muted">(pendiente)</td>
+      </tr></tbody>
+  </table>
+
+  <h2>Decisiones (ADRs)</h2>
+  <ul>
+<li><a href="decisiones/0001-cliente-vanilla-js-backend-node-ts.md">ADR-0001 — Cliente en vanilla JS, backend en Node + TypeScript</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0002-dos-capas-frontera-privacidad.md">ADR-0002 — Arquitectura de dos capas y frontera de privacidad</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0003-mediapipe-tasks-vision.md">ADR-0003 — MediaPipe tasks-vision como motor de inferencia v1</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0004-wss-auth-cliente-publico-dpop.md">ADR-0004 — WSS + auth de cliente público con tokens DPoP</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0005-postgres-outbox-un-proceso.md">ADR-0005 — PostgreSQL + outbox, un proceso, pub/sub en memoria</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0006-docs-markdown-fuente-unica-html-generado.md">ADR-0006 — Documentación: Markdown fuente única → HTML generado</a> <span class="muted">— Aceptado</span></li>
+<li><a href="decisiones/0007-calibracion-cimientos-correctos-escala-incremental.md">ADR-0007 — Calibración: cimientos correctos + endurecido por componente, escala incremental</a> <span class="muted">— Aceptado</span></li>
+  </ul>
+
+  <h2>Documentación</h2>
+  <ul class="links">
+    <li><a href="superpowers/specs/2026-06-27-eagleeye-plataforma-design.md">Diseño maestro (spec)</a></li>
+    <li><a href="arquitectura/vision-general.md">Visión general de arquitectura</a></li>
+    <li><a href="glosario.md">Glosario</a></li>
+    <li><a href="estado/">Fichas de estado por módulo</a></li>
+    <li><a href="decisiones/">Registro de decisiones</a></li>
+  </ul>
+
+  <footer>Generado por tools/docs-gen desde el Markdown fuente. No editar a mano.</footer>
+</main>
+</body>
+</html>

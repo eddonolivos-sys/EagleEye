@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eagleeye.local/schemas/envelope.schema.json",
+  "title": "EagleEye protocol envelope (ev=1)",
+  "description": "Sobre comun a todos los mensajes cliente<->hub. El campo `data` se valida aparte segun (type, sv). Los campos consent/purpose/retention son CLAIMS advisory: el servidor re-deriva los valores efectivos del registro de consentimiento persistido.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ev",
+    "type",
+    "tenant",
+    "sessionId",
+    "source",
+    "seq",
+    "ts",
+    "sv",
+    "consent",
+    "purpose",
+    "retention",
+    "data"
+  ],
+  "properties": {
+    "ev": {
+      "const": 1,
+      "description": "Major del envelope. v1 == 1. Un cambio estructural rompedor lo incrementa."
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$",
+      "maxLength": 64,
+      "description": "Tipo punteado, p.ej. detection.frame | relay.fanout | ctrl.backpressure | auth.refresh | session.start"
+    },
+    "tenant": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "sessionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "source": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "seq": { "type": "integer", "minimum": 0, "description": "Monotonico por sesion. Los huecos son esperados (sin retransmision)." },
+    "ts": { "type": "integer", "minimum": 0, "description": "Epoch ms del cliente; el servidor registra su propio receive-time aparte." },
+    "sv": { "type": "integer", "minimum": 1, "description": "Version de esquema del payload para este `type`." },
+    "dropped": { "type": "integer", "minimum": 0, "description": "Frames coalescidos/descartados desde el ultimo enviado." },
+    "trace": { "type": "string", "maxLength": 128 },
+    "consent": { "type": "string", "minLength": 1, "maxLength": 128, "description": "Referencia a un registro de consentimiento (claim advisory)." },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Proposito declarado (claim advisory)." },
+    "retention": { "type": "string", "enum": ["ephemeral", "persist"], "description": "Retencion declarada (claim advisory)." },
+    "data": { "type": "object", "description": "Payload especifico del `type`, validado por su esquema (type, sv)." }
+  }
+}

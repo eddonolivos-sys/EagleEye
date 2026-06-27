@@ -1,0 +1,25 @@
+{
+  "name": "eagleeye",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor reutilizable de vision por computadora en navegador (inferencia 100% local) + hub de integraciones/relay endurecido.",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "docs:build": "node tools/docs-gen/build.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "typescript": "5.7.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

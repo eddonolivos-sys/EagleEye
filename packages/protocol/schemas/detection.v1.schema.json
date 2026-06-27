@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eagleeye.local/schemas/detection.v1.schema.json",
+  "title": "EagleEye detection payload (sv=1)",
+  "description": "Contenido de `data` para type=detection.frame. Un solo esquema sirve a los tres dominios (pose/manos/cara). Coordenadas normalizadas [0,1] del frame fuente. NUNCA contiene pixeles.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kf", "detections"],
+  "properties": {
+    "kf": { "type": "boolean", "description": "true = keyframe (estado completo); false = delta." },
+    "detections": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/detection" }
+    }
+  },
+  "$defs": {
+    "landmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "z": { "type": "number", "description": "Profundidad relativa; no acotada a [0,1]." },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "worldPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      }
+    },
+    "blendshape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "score"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "detector", "landmarks", "mirrored", "sourceWidth", "sourceHeight"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["pose", "hands", "face"] },
+        "detector": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "modelVersion": { "type": "string", "maxLength": 64 },
+        "instanceId": { "type": "integer", "minimum": 0, "maximum": 64 },
+        "landmarks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 600,
+          "items": { "$ref": "#/$defs/landmark" }
+        },
+        "world": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/worldPoint" }
+        },
+        "handedness": { "type": "string", "enum": ["left", "right"] },
+        "blendshapes": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/blendshape" }
+        },
+        "transform": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": { "type": "number" },
+          "description": "Matriz 4x4 row-major (pose facial)."
+        },
+        "mirrored": { "type": "boolean" },
+        "sourceWidth": { "type": "integer", "minimum": 1, "maximum": 8192 },
+        "sourceHeight": { "type": "integer", "minimum": 1, "maximum": 8192 }
+      }
+    }
+  }
+}
