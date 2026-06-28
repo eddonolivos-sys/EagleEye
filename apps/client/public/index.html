@@ -41,11 +41,14 @@
   <div class="panel">
     <div class="controls">
       <button id="start">Iniciar cámara</button>
-      <select id="facing" title="cámara frontal o trasera">
-        <option value="user">Frontal</option>
-        <option value="environment">Trasera</option>
-      </select>
-      <select id="device" title="dispositivo de cámara (opcional)"></select>
+      <!-- Selector opcional: oculto por defecto; main.js lo muestra solo si hay >1 cámara. -->
+      <span id="camswitch" hidden>
+        <select id="facing" title="cámara frontal o trasera">
+          <option value="user">Frontal</option>
+          <option value="environment">Trasera</option>
+        </select>
+        <select id="device" title="dispositivo de cámara (opcional)"></select>
+      </span>
     </div>
     <dl>
       <dt>FPS</dt><dd class="big" id="fps">0</dd>

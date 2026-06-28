@@ -18,6 +18,17 @@ export function buildVideoConstraints({ deviceId, facingMode = 'user', width = 6
 }
 
 /**
+ * Decide si el video debe mostrarse en espejo (selfie). Se espeja TODO salvo la
+ * camara trasera ('environment'): frontal ('user') -> espejo; desconocido -> espejo
+ * por defecto (caso comun de webcam frontal). Pura y testeada.
+ * @param {string | undefined} facingMode `track.getSettings().facingMode`
+ * @returns {boolean}
+ */
+export function shouldMirror(facingMode) {
+  return facingMode !== 'environment';
+}
+
+/**
  * Verifica que la API de captura este disponible y, si no, lanza un error
  * ACCIONABLE. La causa habitual de que falte es un contexto no seguro (en movil,
  * abrir por http://IP en vez de HTTPS/localhost).
@@ -53,7 +64,7 @@ export function describeGetUserMediaError(err) {
       );
     case 'NotFoundError':
     case 'OverconstrainedError':
-      return 'No se encontró una cámara que cumpla los requisitos. Prueba a cambiar frontal/trasera.';
+      return 'No se detectó una cámara disponible. Conecta o habilita una cámara y vuelve a intentarlo.';
     case 'NotReadableError':
     case 'AbortError':
       return 'La cámara está en uso por otra app o no se pudo leer. Cierra otras apps que usen la cámara.';
@@ -77,14 +88,18 @@ export function createCamera(video) {
     },
 
     /**
+     * Pide la camara. Por defecto (sin opts) hace la peticion MAS SIMPLE posible:
+     * `{ video: true }` -> la camara predeterminada del navegador, sin constraints
+     * (no puede fallar por OverconstrainedError). Solo restringe si se pide
+     * explicitamente otra camara (deviceId o facingMode) via buildVideoConstraints.
      * @param {{ deviceId?: string, facingMode?: 'user'|'environment', width?: number, height?: number }} [opts]
-     * @returns {Promise<{ width: number, height: number, label: string }>}
+     * @returns {Promise<{ width: number, height: number, label: string, facingMode: string | undefined }>}
      */
     async start(opts = {}) {
       assertGetUserMedia();
       this.stop();
-      const constraints = buildVideoConstraints(opts);
-      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
+      const videoConstraint = opts.deviceId || opts.facingMode ? buildVideoConstraints(opts) : true;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: videoConstraint });
       video.srcObject = stream;
       await video.play();
       const track = stream.getVideoTracks()[0];
@@ -93,6 +108,7 @@ export function createCamera(video) {
         width: s.width ?? video.videoWidth,
         height: s.height ?? video.videoHeight,
         label: track.label || 'camara',
+        facingMode: s.facingMode,
       };
     },
 

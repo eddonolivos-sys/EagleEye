@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildVideoConstraints, assertGetUserMedia, describeGetUserMediaError } from '../public/lib/camera.js';
+import { buildVideoConstraints, assertGetUserMedia, describeGetUserMediaError, shouldMirror } from '../public/lib/camera.js';
 
 test('uses the front camera (facingMode user) by default', () => {
   const c = buildVideoConstraints();
@@ -44,10 +44,21 @@ test('describeGetUserMediaError maps permission denial to an actionable hint', (
 });
 
 test('describeGetUserMediaError maps no-camera and busy errors', () => {
-  assert.match(describeGetUserMediaError({ name: 'NotFoundError' }), /no se encontr/i);
+  assert.match(describeGetUserMediaError({ name: 'NotFoundError' }), /no se detect/i);
   assert.match(describeGetUserMediaError({ name: 'NotReadableError' }), /uso/i);
 });
 
 test('describeGetUserMediaError falls back to the raw message for unknown errors', () => {
   assert.equal(describeGetUserMediaError({ name: 'WeirdError', message: 'algo raro' }), 'algo raro');
+});
+
+test('shouldMirror espeja todo salvo la cámara trasera (environment)', () => {
+  assert.equal(shouldMirror('user'), true);
+  assert.equal(shouldMirror('environment'), false);
+});
+
+test('shouldMirror espeja por defecto cuando el facingMode es desconocido', () => {
+  assert.equal(shouldMirror(undefined), true);
+  assert.equal(shouldMirror(''), true);
+  assert.equal(shouldMirror('left'), true);
 });

@@ -5,7 +5,7 @@
 // Tres relojes desacoplados: inferencia (single-in-flight, drop-while-busy),
 // render (al recibir resultado) y emisión de red (coalescada a 15 Hz).
 
-import { createCamera, describeGetUserMediaError } from './lib/camera.js';
+import { createCamera, describeGetUserMediaError, shouldMirror } from './lib/camera.js';
 import { createResultBus } from './lib/resultBus.js';
 import { createStats } from './lib/stats.js';
 import { createThrottle } from './lib/throttle.js';
@@ -19,6 +19,7 @@ const video = /** @type {HTMLVideoElement} */ ($('video'));
 const canvas = /** @type {HTMLCanvasElement} */ ($('overlay'));
 const facingSel = /** @type {HTMLSelectElement} */ ($('facing'));
 const deviceSel = /** @type {HTMLSelectElement} */ ($('device'));
+const camSwitch = $('camswitch'); // contenedor del selector opcional (oculto si hay 1 cámara)
 
 const hud = createHud({
   fps: $('fps'), frameMs: $('frameMs'), latency: $('latency'), backend: $('backend'),
@@ -110,9 +111,15 @@ function loop() {
   else requestAnimationFrame(tick);
 }
 
-async function rebuildDeviceOptions() {
+// Tras conceder permiso, muestra el selector SOLO si hay mas de una camara; si no,
+// lo deja oculto (flujo de un toque, ADR-0012).
+async function updateCameraSwitch() {
   try {
     const devices = await camera.listDevices();
+    if (devices.length <= 1) {
+      camSwitch.hidden = true;
+      return;
+    }
     const cur = deviceSel.value;
     deviceSel.innerHTML = '';
     const auto = document.createElement('option');
@@ -126,27 +133,25 @@ async function rebuildDeviceOptions() {
       deviceSel.appendChild(o);
     });
     deviceSel.value = [...deviceSel.options].some((o) => o.value === cur) ? cur : '';
+    camSwitch.hidden = false;
   } catch {
-    /* etiquetas vacías hasta conceder permiso */
+    camSwitch.hidden = true;
   }
 }
 
-async function startCamera() {
+// Por defecto pide la camara PREDETERMINADA (sin opts): la peticion mas simple
+// posible. Solo pasa opts cuando el usuario usa el selector opcional (ADR-0012).
+/** @param {{ deviceId?: string, facingMode?: 'user'|'environment' }} [opts] */
+async function startCamera(opts = {}) {
   try {
-    const facing = /** @type {'user'|'environment'} */ (facingSel.value);
     hud.status('pidiendo permiso de cámara…');
-    const info = await camera.start({
-      deviceId: deviceSel.value || undefined,
-      facingMode: facing,
-      width: 640,
-      height: 480,
-    });
+    const info = await camera.start(opts);
     started = true;
-    const mirrored = facing === 'user'; // selfie solo con cámara frontal
+    const mirrored = shouldMirror(info.facingMode); // espejo derivado del track (ADR-0012)
     source = { width: info.width, height: info.height, mirrored };
     video.style.transform = mirrored ? 'scaleX(-1)' : 'none';
     renderer.resize(info.width, info.height);
-    await rebuildDeviceOptions(); // ahora con etiquetas reales
+    await updateCameraSwitch(); // revela el selector solo si hay >1 cámara
     hud.status('cámara ' + info.width + '×' + info.height + ' — cargando modelo…');
     if (!worker) startWorker();
     else loop();
@@ -156,12 +161,15 @@ async function startCamera() {
   }
 }
 
-$('start').addEventListener('click', startCamera);
-// Cambiar de cámara reinicia el stream (solo si ya estaba activa).
-facingSel.addEventListener('change', () => { if (started) startCamera(); });
-deviceSel.addEventListener('change', () => { if (started) startCamera(); });
+$('start').addEventListener('click', () => startCamera());
+// El selector opcional (visible solo con >1 cámara) reinicia el stream con la elección.
+facingSel.addEventListener('change', () => {
+  if (started) startCamera({ facingMode: /** @type {'user'|'environment'} */ (facingSel.value) });
+});
+deviceSel.addEventListener('change', () => {
+  if (started) startCamera(deviceSel.value ? { deviceId: deviceSel.value } : {});
+});
 
 // Estado inicial
 hud.status('listo — pulsa «Iniciar cámara»');
 hud.update({ fps: 0, frameMs: 0, latencyMs: 0, backend: '—', faces: 0, sent: 0, coi });
-rebuildDeviceOptions();
