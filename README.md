@@ -108,6 +108,10 @@ Esto es **reachability de red del host**, no del contenedor (el contenedor sirve
 3. **Prueba desde el propio host** abriendo `https://192.168.x.x:5173` (su IP de LAN, no localhost). Si el host SÍ llega pero el móvil no → firewall o aislamiento de la red Wi-Fi.
 4. **Misma red, sin aislamiento.** Móvil y host en la misma Wi-Fi (no "invitados"), sin VPN en el móvil, y sin *AP/client isolation* en el router.
 
+> **Que el host llegue a su propia IP de LAN NO confirma que la LAN esté abierta:** ese tráfico es local y suele saltarse el filtro de entrada del firewall. El móvil es una conexión externa real → necesita la regla del paso 2.
+>
+> **La cámara NO funciona por http** (sin "s"): `http://IP` deja `navigator.mediaDevices` indefinido y el navegador nunca pide permiso. Una vez conectes por `https://IP:5173`, Android Chrome mostrará un aviso de certificado autofirmado → **Avanzado → Continuar (no seguro)** → ahí pide permiso de cámara. Para evitar el aviso por completo: certificado de confianza con *mkcert* instalando su CA en el móvil (opcional, más adelante).
+
 ## Documentación
 
 - **Diseño maestro:** [`docs/superpowers/specs/2026-06-27-eagleeye-plataforma-design.md`](docs/superpowers/specs/2026-06-27-eagleeye-plataforma-design.md)
