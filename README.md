@@ -75,7 +75,23 @@ Un único contenedor (Caddy + cliente estático) con **redirección automática 
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-Luego abre `http://<host>` (o la IP de LAN): Caddy redirige **automáticamente** a `https://<host>`. En LAN sin dominio, acepta una vez el aviso de certificado (CA interna de Caddy); con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso. Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
+El contenedor escucha en los **puertos 80 y 443** (NO en `5173`, que es el server de dev). Abre **`http://localhost`** (sin puerto) o **`http://<IP-de-LAN>`**: Caddy redirige **automáticamente** a `https://…`. En LAN sin dominio, acepta una vez el aviso de certificado (CA interna de Caddy); con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso. Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
+
+#### El contenedor no responde — diagnóstico
+
+```bash
+docker compose -f docker/docker-compose.yml ps      # ¿Status = Up? (si está Exited/ausente, no arrancó)
+docker logs eagleeye-client                          # errores de Caddy
+```
+
+Causa más común: **los puertos 80/443 ya están en uso** (en Windows, `http.sys`/IIS reservan el 80). El síntoma es un error al levantar: `Bind for 0.0.0.0:80 failed: port is already allocated`. Solución — usa puertos altos y abre el `https` **directamente**:
+
+```bash
+HTTP_PORT=8080 HTTPS_PORT=8443 docker compose -f docker/docker-compose.yml up --build
+# luego abre directamente:  https://localhost:8443
+```
+
+(En modo puerto-alto la redirección automática desde el puerto HTTP no aplica; ve directo a la URL `https://…:8443`.) Si accedes desde otro dispositivo de la LAN, asegúrate de que el firewall del host permite ese puerto.
 
 ## Documentación
 
