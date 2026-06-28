@@ -20,8 +20,8 @@ services:
       dockerfile: docker/Dockerfile
     image: eagleeye-client
     container_name: eagleeye-client
-    # Cambia el puerto del host si ${PORT} esta ocupado en la VPS (tienes otros
-    # proyectos): p.ej.  PORT=8090 docker compose ... up -d
+    # Puerto del host (cloudflared enruta el subdominio aqui). Por defecto 5173.
+    # Cambialo si ese puerto esta ocupado en la VPS:  PORT=5190 docker compose ... up -d
     ports:
-      - "${PORT:-8080}:80"
+      - "${PORT:-5173}:80"
     restart: unless-stopped

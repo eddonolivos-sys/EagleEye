@@ -75,22 +75,22 @@ En la VPS (con cloudflared ya operativo):
 
 ```bash
 git clone <repo> && cd EagleEye
-PORT=8080 docker compose -f docker/docker-compose.yml up -d --build   # elige un puerto LIBRE
+docker compose -f docker/docker-compose.yml up -d --build   # sirve en el puerto 5173 (por defecto)
 ```
 
-El contenedor sirve en `http://localhost:8080` y, con `restart: unless-stopped` + el daemon de Docker en arranque, **sobrevive reinicios**. No expone puertos a internet: solo el túnel saliente.
+El contenedor sirve en `http://localhost:5173` y, con `restart: unless-stopped` + el daemon de Docker en arranque, **sobrevive reinicios**. No expone puertos a internet: solo el túnel saliente. (Si 5173 está ocupado: `PORT=5190 docker compose ... up -d`.)
 
-**Probar en local (escritorio):** `http://localhost:8080` es contexto seguro → la cámara funciona en el PC. Para el móvil, se prueba ya por el dominio público.
+**Probar en local (escritorio):** `http://localhost:5173` es contexto seguro → la cámara funciona en el PC. Para el móvil, se prueba ya por el dominio público.
 
 #### Enrutar el subdominio en cloudflared
 
 - **Túnel por `config.yml`** (local): bajo `ingress:`, ANTES del catch-all `service: http_status:404`:
   ```yaml
-  - hostname: eagleeye.tu-dominio.com
-    service: http://localhost:8080
+  - hostname: cam.tu-dominio.com
+    service: http://localhost:5173
   ```
-  Crea el DNS: `cloudflared tunnel route dns <tunnel> eagleeye.tu-dominio.com` y reinicia cloudflared.
-- **Túnel por dashboard** (Zero Trust): *Tunnels → tu túnel → Public Hostname → Add* → subdominio + `http://localhost:8080`.
+  Crea el DNS: `cloudflared tunnel route dns <tunnel> cam.tu-dominio.com` y reinicia cloudflared.
+- **Túnel por dashboard** (Zero Trust): *Tunnels → tu túnel → Public Hostname → Add* → subdominio + `http://localhost:5173`.
 
 > Cloudflare: **desactiva Rocket Loader y Auto Minify** para ese hostname (romperían COEP).
 
