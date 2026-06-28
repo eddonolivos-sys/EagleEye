@@ -94,7 +94,19 @@ docker compose -f docker/docker-compose.yml ps   # ¿Status = Up? (si está Exit
 docker logs eagleeye-client                       # errores de Caddy
 ```
 
-Si ves `port is already allocated`, ese puerto está ocupado: cámbialo en PowerShell (`$env:HTTPS_PORT=5180; docker compose ... up`) y abre `https://localhost:5180`. Para acceso desde la LAN, comprueba que el firewall del host permite el puerto.
+Si ves `port is already allocated`, ese puerto está ocupado: cámbialo en PowerShell (`$env:HTTPS_PORT=5180; docker compose ... up`) y abre `https://localhost:5180`.
+
+#### Funciona en localhost pero NO desde el móvil / otro equipo de la LAN
+
+Esto es **reachability de red del host**, no del contenedor (el contenedor sirve HTTPS en todas las interfaces, `0.0.0.0`). Por orden:
+
+1. **Usa la IP de LAN correcta.** En el host: `ipconfig` (Windows) → la IPv4 del adaptador conectado a tu red, tipo `192.168.x.x`. **NO** uses las virtuales (`172.x.x.x` de WSL/Hyper-V, ni `169.254.x.x`). Desde el móvil: `https://192.168.x.x:5173`.
+2. **Abre el puerto en el Firewall de Windows** (causa #1; el loopback no se filtra pero la LAN sí). En **PowerShell como administrador**:
+   ```powershell
+   New-NetFirewallRule -DisplayName "EagleEye 5173" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow
+   ```
+3. **Prueba desde el propio host** abriendo `https://192.168.x.x:5173` (su IP de LAN, no localhost). Si el host SÍ llega pero el móvil no → firewall o aislamiento de la red Wi-Fi.
+4. **Misma red, sin aislamiento.** Móvil y host en la misma Wi-Fi (no "invitados"), sin VPN en el móvil, y sin *AP/client isolation* en el router.
 
 ## Documentación
 
