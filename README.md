@@ -65,52 +65,38 @@ Abre `http://localhost:5173`, pulsa «Iniciar cámara» y elige **Frontal/Traser
 pnpm --filter @eagleeye/client run dev:https  # imprime https://<IP-de-LAN>:5173
 ```
 
-Abre esa URL `https://…` en el móvil, acepta una vez el aviso de certificado autofirmado y concede permiso de cámara. En producción el contexto seguro lo da Caddy con auto-TLS. Ver [ADR-0009](docs/decisiones/0009-dev-https-movil-contexto-seguro.md).
+Abre esa URL `https://…` en el móvil, acepta una vez el aviso de certificado autofirmado y concede permiso de cámara. (Esto es solo para pruebas locales en LAN; en **producción** el HTTPS de confianza lo da **Cloudflare Tunnel** — ver [ADR-0011](docs/decisiones/0011-despliegue-cloudflare-tunnel.md) — y no hace falta aceptar ningún aviso.) Ver [ADR-0009](docs/decisiones/0009-dev-https-movil-contexto-seguro.md).
 
-### Desplegar (Docker)
+### Desplegar (Docker detrás de Cloudflare Tunnel)
 
-Un único contenedor (Caddy + cliente estático) que sirve **HTTPS** (contexto seguro para la cámara). **Cero configuración:**
+El origen sirve **HTTP**; el **HTTPS público y el certificado de confianza** los pone **Cloudflare Tunnel** en el edge (ver [ADR-0011](docs/decisiones/0011-despliegue-cloudflare-tunnel.md)). Así la cámara funciona en cualquier dispositivo (incluido Android) **sin avisos ni certificados que gestionar**.
 
-```bash
-docker compose -f docker/docker-compose.yml up --build
-```
-
-Abre **`https://localhost:5173`** (o `https://<IP-de-LAN>:5173` desde el móvil) y acepta una vez el aviso de certificado (CA interna de Caddy, autofirmado). Con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso.
-
-> Por defecto el contenedor usa **5173 (HTTPS)** y 5174 (HTTP) — puertos altos que evitan el conflicto típico de Windows con el 80. Si tienes el server de dev corriendo en 5173, **deténlo antes** (chocarían).
-
-**Modo "producción"** (redirección automática `http→https` en puertos estándar) — en **PowerShell**:
-
-```powershell
-$env:HTTP_PORT=80; $env:HTTPS_PORT=443; docker compose -f docker/docker-compose.yml up --build
-```
-
-Así `http://<host>` redirige solo a `https://<host>` (requiere 80/443 libres). Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
-
-#### El contenedor no responde — diagnóstico
+En la VPS (con cloudflared ya operativo):
 
 ```bash
-docker compose -f docker/docker-compose.yml ps   # ¿Status = Up? (si está Exited/ausente, no arrancó)
-docker logs eagleeye-client                       # errores de Caddy
+git clone <repo> && cd EagleEye
+PORT=8080 docker compose -f docker/docker-compose.yml up -d --build   # elige un puerto LIBRE
 ```
 
-Si ves `port is already allocated`, ese puerto está ocupado: cámbialo en PowerShell (`$env:HTTPS_PORT=5180; docker compose ... up`) y abre `https://localhost:5180`.
+El contenedor sirve en `http://localhost:8080` y, con `restart: unless-stopped` + el daemon de Docker en arranque, **sobrevive reinicios**. No expone puertos a internet: solo el túnel saliente.
 
-#### Funciona en localhost pero NO desde el móvil / otro equipo de la LAN
+**Probar en local (escritorio):** `http://localhost:8080` es contexto seguro → la cámara funciona en el PC. Para el móvil, se prueba ya por el dominio público.
 
-Esto es **reachability de red del host**, no del contenedor (el contenedor sirve HTTPS en todas las interfaces, `0.0.0.0`). Por orden:
+#### Enrutar el subdominio en cloudflared
 
-1. **Usa la IP de LAN correcta.** En el host: `ipconfig` (Windows) → la IPv4 del adaptador conectado a tu red, tipo `192.168.x.x`. **NO** uses las virtuales (`172.x.x.x` de WSL/Hyper-V, ni `169.254.x.x`). Desde el móvil: `https://192.168.x.x:5173`.
-2. **Abre el puerto en el Firewall de Windows** (causa #1; el loopback no se filtra pero la LAN sí). En **PowerShell como administrador**:
-   ```powershell
-   New-NetFirewallRule -DisplayName "EagleEye 5173" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow
-   ```
-3. **Prueba desde el propio host** abriendo `https://192.168.x.x:5173` (su IP de LAN, no localhost). Si el host SÍ llega pero el móvil no → firewall o aislamiento de la red Wi-Fi.
-4. **Misma red, sin aislamiento.** Móvil y host en la misma Wi-Fi (no "invitados"), sin VPN en el móvil, y sin *AP/client isolation* en el router.
+- **Túnel por `config.yml`** (local): bajo `ingress:`, ANTES del catch-all `service: http_status:404`:
+  ```yaml
+  - hostname: eagleeye.tu-dominio.com
+    service: http://localhost:8080
+  ```
+  Crea el DNS: `cloudflared tunnel route dns <tunnel> eagleeye.tu-dominio.com` y reinicia cloudflared.
+- **Túnel por dashboard** (Zero Trust): *Tunnels → tu túnel → Public Hostname → Add* → subdominio + `http://localhost:8080`.
 
-> **Que el host llegue a su propia IP de LAN NO confirma que la LAN esté abierta:** ese tráfico es local y suele saltarse el filtro de entrada del firewall. El móvil es una conexión externa real → necesita la regla del paso 2.
->
-> **La cámara NO funciona por http** (sin "s"): `http://IP` deja `navigator.mediaDevices` indefinido y el navegador nunca pide permiso. Una vez conectes por `https://IP:5173`, Android Chrome mostrará un aviso de certificado autofirmado → **Avanzado → Continuar (no seguro)** → ahí pide permiso de cámara. Para evitar el aviso por completo: certificado de confianza con *mkcert* instalando su CA en el móvil (opcional, más adelante).
+> Cloudflare: **desactiva Rocket Loader y Auto Minify** para ese hostname (romperían COEP).
+
+#### Diagnóstico
+
+`docker compose -f docker/docker-compose.yml ps` (¿Up?) · `docker logs eagleeye-client`. Si ves `port is already allocated`, usa otro `PORT`. Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres). Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
 
 ## Documentación
 

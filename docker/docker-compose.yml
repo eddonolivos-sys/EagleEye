@@ -1,11 +1,17 @@
-# Despliegue del cliente EagleEye en UN contenedor (Caddy + estaticos).
-# Uso:  docker compose -f docker/docker-compose.yml up --build
-# Luego: http://<host>  ->  redirige a  https://<host>  (camara disponible).
+# Despliegue del cliente EagleEye en UN contenedor (Caddy sirviendo estaticos por
+# HTTP), pensado para ir detras de Cloudflare Tunnel (HTTPS publico en el edge).
+#
+#   docker compose -f docker/docker-compose.yml up -d --build
+#
+# El origen sirve HTTP en el puerto ${PORT:-8080}. Tu cloudflared (ya operativo)
+# enruta  https://<subdominio>.<dominio>  ->  http://localhost:${PORT}.
+# Ver ADR-0011. En local, http://localhost:${PORT} es contexto seguro (la camara
+# funciona en escritorio); en movil se prueba ya por el dominio publico.
+#
+# `restart: unless-stopped` + el daemon de Docker en arranque = sobrevive reinicios.
 #
 # Cuando llegue el backend (build step 4+), este compose gana servicios `app`
-# (Node) y `db` (Postgres) y Caddy pasa a hacer ademas de reverse-proxy. Ver
-# ADR-0010: contenedor unico ahora, pocos servicios en compose despues (NO meter
-# Node+Postgres+Caddy en una sola imagen).
+# (Node) y `db` (Postgres). Ver ADR-0010 (pocos servicios, no todo en una imagen).
 
 services:
   client:
@@ -14,12 +20,8 @@ services:
       dockerfile: docker/Dockerfile
     image: eagleeye-client
     container_name: eagleeye-client
-    # Por defecto HTTPS en 5173 (puerto alto, sin conflicto con http.sys/IIS de
-    # Windows): abre directamente  https://localhost:5173
-    # Para el modo "produccion" con redireccion automatica http->https en puertos
-    # estandar, sobre-escribe los puertos (PowerShell):
-    #   $env:HTTP_PORT=80; $env:HTTPS_PORT=443; docker compose -f docker/docker-compose.yml up --build
+    # Cambia el puerto del host si ${PORT} esta ocupado en la VPS (tienes otros
+    # proyectos): p.ej.  PORT=8090 docker compose ... up -d
     ports:
-      - "${HTTP_PORT:-5174}:80"
-      - "${HTTPS_PORT:-5173}:443"
+      - "${PORT:-8080}:80"
     restart: unless-stopped

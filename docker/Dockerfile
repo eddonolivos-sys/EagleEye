@@ -18,5 +18,6 @@ RUN pnpm --filter @eagleeye/client run vendor
 FROM caddy:2-alpine
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY --from=vendor /app/apps/client/public /srv
-EXPOSE 80 443
+EXPOSE 80
 # La imagen de Caddy ya define el ENTRYPOINT/CMD que lee /etc/caddy/Caddyfile.
+# Sirve HTTP; el TLS publico lo pone Cloudflare Tunnel delante (ADR-0011).
