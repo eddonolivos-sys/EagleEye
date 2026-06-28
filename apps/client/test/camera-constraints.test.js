@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildVideoConstraints, assertGetUserMedia } from '../public/lib/camera.js';
+import { buildVideoConstraints, assertGetUserMedia, describeGetUserMediaError } from '../public/lib/camera.js';
 
 test('uses the front camera (facingMode user) by default', () => {
   const c = buildVideoConstraints();
@@ -35,4 +35,19 @@ test('assertGetUserMedia throws an actionable error when mediaDevices is missing
 
 test('assertGetUserMedia passes when getUserMedia is available', () => {
   assert.doesNotThrow(() => assertGetUserMedia({ mediaDevices: { getUserMedia() {} } }));
+});
+
+test('describeGetUserMediaError maps permission denial to an actionable hint', () => {
+  const msg = describeGetUserMediaError({ name: 'NotAllowedError', message: 'Permission denied' });
+  assert.match(msg, /permiso/i);
+  assert.match(msg, /cámara|camara/i);
+});
+
+test('describeGetUserMediaError maps no-camera and busy errors', () => {
+  assert.match(describeGetUserMediaError({ name: 'NotFoundError' }), /no se encontr/i);
+  assert.match(describeGetUserMediaError({ name: 'NotReadableError' }), /uso/i);
+});
+
+test('describeGetUserMediaError falls back to the raw message for unknown errors', () => {
+  assert.equal(describeGetUserMediaError({ name: 'WeirdError', message: 'algo raro' }), 'algo raro');
 });

@@ -5,7 +5,7 @@
 // Tres relojes desacoplados: inferencia (single-in-flight, drop-while-busy),
 // render (al recibir resultado) y emisión de red (coalescada a 15 Hz).
 
-import { createCamera } from './lib/camera.js';
+import { createCamera, describeGetUserMediaError } from './lib/camera.js';
 import { createResultBus } from './lib/resultBus.js';
 import { createStats } from './lib/stats.js';
 import { createThrottle } from './lib/throttle.js';
@@ -151,7 +151,7 @@ async function startCamera() {
     if (!worker) startWorker();
     else loop();
   } catch (err) {
-    hud.status('error de cámara: ' + (err && err.message ? err.message : err));
+    hud.status('error de cámara: ' + describeGetUserMediaError(/** @type {any} */ (err)));
     console.error(err);
   }
 }

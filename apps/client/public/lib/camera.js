@@ -36,6 +36,33 @@ export function assertGetUserMedia(nav = globalThis.navigator) {
 }
 
 /**
+ * Traduce un error de getUserMedia a una pista accionable (en es).
+ * @param {{ name?: string, message?: string }} err
+ * @returns {string}
+ */
+export function describeGetUserMediaError(err) {
+  const name = err && err.name ? err.name : '';
+  switch (name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return (
+        'Permiso de cámara denegado. Revisa: (1) Ajustes del sistema → Apps → Chrome → ' +
+        'Permisos → Cámara; (2) en Chrome, el candado junto a la URL → Permisos → Cámara → ' +
+        'Restablecer, y recarga. Si el prompt nunca aparece sobre un certificado autofirmado, ' +
+        'Android puede estar bloqueando la cámara: usa un certificado de confianza (mkcert).'
+      );
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'No se encontró una cámara que cumpla los requisitos. Prueba a cambiar frontal/trasera.';
+    case 'NotReadableError':
+    case 'AbortError':
+      return 'La cámara está en uso por otra app o no se pudo leer. Cierra otras apps que usen la cámara.';
+    default:
+      return err && err.message ? err.message : String(err);
+  }
+}
+
+/**
  * @param {HTMLVideoElement} video
  */
 export function createCamera(video) {
