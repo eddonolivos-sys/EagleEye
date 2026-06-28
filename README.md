@@ -67,31 +67,34 @@ pnpm --filter @eagleeye/client run dev:https  # imprime https://<IP-de-LAN>:5173
 
 Abre esa URL `https://…` en el móvil, acepta una vez el aviso de certificado autofirmado y concede permiso de cámara. En producción el contexto seguro lo da Caddy con auto-TLS. Ver [ADR-0009](docs/decisiones/0009-dev-https-movil-contexto-seguro.md).
 
-### Desplegar (Docker: HTTPS + redirección automática)
+### Desplegar (Docker)
 
-Un único contenedor (Caddy + cliente estático) con **redirección automática `http→https`** y contexto seguro para la cámara:
+Un único contenedor (Caddy + cliente estático) que sirve **HTTPS** (contexto seguro para la cámara). **Cero configuración:**
 
 ```bash
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-El contenedor escucha en los **puertos 80 y 443** (NO en `5173`, que es el server de dev). Abre **`http://localhost`** (sin puerto) o **`http://<IP-de-LAN>`**: Caddy redirige **automáticamente** a `https://…`. En LAN sin dominio, acepta una vez el aviso de certificado (CA interna de Caddy); con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso. Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
+Abre **`https://localhost:5173`** (o `https://<IP-de-LAN>:5173` desde el móvil) y acepta una vez el aviso de certificado (CA interna de Caddy, autofirmado). Con un dominio público, Caddy emite Let's Encrypt y desaparece el aviso.
+
+> Por defecto el contenedor usa **5173 (HTTPS)** y 5174 (HTTP) — puertos altos que evitan el conflicto típico de Windows con el 80. Si tienes el server de dev corriendo en 5173, **deténlo antes** (chocarían).
+
+**Modo "producción"** (redirección automática `http→https` en puertos estándar) — en **PowerShell**:
+
+```powershell
+$env:HTTP_PORT=80; $env:HTTPS_PORT=443; docker compose -f docker/docker-compose.yml up --build
+```
+
+Así `http://<host>` redirige solo a `https://<host>` (requiere 80/443 libres). Cuando llegue el backend, este Compose gana servicios `app` (Node) y `db` (Postgres) sin meter todo en una sola imagen. Ver [ADR-0010](docs/decisiones/0010-docker-contenedor-unico-cliente.md).
 
 #### El contenedor no responde — diagnóstico
 
 ```bash
-docker compose -f docker/docker-compose.yml ps      # ¿Status = Up? (si está Exited/ausente, no arrancó)
-docker logs eagleeye-client                          # errores de Caddy
+docker compose -f docker/docker-compose.yml ps   # ¿Status = Up? (si está Exited/ausente, no arrancó)
+docker logs eagleeye-client                       # errores de Caddy
 ```
 
-Causa más común: **los puertos 80/443 ya están en uso** (en Windows, `http.sys`/IIS reservan el 80). El síntoma es un error al levantar: `Bind for 0.0.0.0:80 failed: port is already allocated`. Solución — usa puertos altos y abre el `https` **directamente**:
-
-```bash
-HTTP_PORT=8080 HTTPS_PORT=8443 docker compose -f docker/docker-compose.yml up --build
-# luego abre directamente:  https://localhost:8443
-```
-
-(En modo puerto-alto la redirección automática desde el puerto HTTP no aplica; ve directo a la URL `https://…:8443`.) Si accedes desde otro dispositivo de la LAN, asegúrate de que el firewall del host permite ese puerto.
+Si ves `port is already allocated`, ese puerto está ocupado: cámbialo en PowerShell (`$env:HTTPS_PORT=5180; docker compose ... up`) y abre `https://localhost:5180`. Para acceso desde la LAN, comprueba que el firewall del host permite el puerto.
 
 ## Documentación
 
